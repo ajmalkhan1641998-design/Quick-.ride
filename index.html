@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#087e68"><link rel="manifest" href="manifest.webmanifest">
+<title>QuickRide</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f7f5;color:#17211f;font:16px system-ui}
+header{background:#087e68;color:white;padding:22px 18px;border-radius:0 0 22px 22px}
+main{max-width:620px;margin:auto;padding:16px}.card{background:white;padding:18px;border-radius:16px;margin:14px 0;box-shadow:0 2px 12px #0001}
+h1{margin:0}label{display:block;margin:12px 0 5px}input,select,button{width:100%;padding:13px;border:1px solid #ccd8d3;border-radius:10px;font:inherit}
+button{background:#087e68;color:white;border:0;font-weight:700;margin-top:12px}
+button.secondary{background:#e5f2ee;color:#075d4d}.muted{color:#64736d;font-size:13px}.hidden{display:none}
+.pill{display:inline-block;background:#e5f2ee;padding:5px 10px;border-radius:99px;font-size:12px}
+</style></head>
+<body>
+<header><span class="pill">AVUDAIYARKOVIL</span><h1>🏍️ QuickRide</h1><p id="tag">உங்கள் பயணம், உங்கள் அருகில்</p>
+<select id="lang" aria-label="Language"><option value="ta">தமிழ்</option><option value="en">English</option></select></header>
+<main>
+<div class="card">
+<h2 id="welcome">யார் QuickRide பயன்படுத்துகிறீர்கள்?</h2>
+<button onclick="show('customer')" id="customerBtn">பயணி / Customer</button>
+<button class="secondary" onclick="show('rider')" id="riderBtn">ரைடர் / Rider</button>
+<button class="secondary" onclick="show('admin')" id="adminBtn">நிர்வாகம் / Admin demo</button>
+</div>
+<section id="customer" class="card hidden">
+<h2 id="bookTitle">பயணம் பதிவு</h2>
+<label id="pickupLabel">பிக்கப் இடம்</label><input id="pickup" value="Avudaiyarkovil Bus Stand">
+<label id="dropLabel">செல்ல வேண்டிய இடம்</label><input id="drop" placeholder="Destination">
+<button onclick="requestRide()" id="requestBtn">ரைடு கோரிக்கை</button>
+<p class="muted" id="customerMsg">இது மாதிரி செயலி. உண்மையான ரைடு பதிவு செய்யாது.</p>
+</section>
+<section id="rider" class="card hidden">
+<h2 id="riderTitle">ரைடர் கோரிக்கைகள்</h2><div id="requests">இன்னும் கோரிக்கைகள் இல்லை.</div>
+</section>
+<section id="admin" class="card hidden">
+<h2>Admin demo</h2><p id="adminMsg">Demo மட்டும். Login அல்லது பாதுகாப்பான நிர்வாக அணுகல் இல்லை.</p>
+<div id="adminList"></div>
+</section>
+<div class="card"><strong id="legalTitle">பாதுகாப்பு அறிவிப்பு</strong><p class="muted" id="legal">அரசு/RTO அனுமதி, சரியான வாகன அனுமதி மற்றும் பயணிகள் காப்பீடு உறுதி செய்யப்படும் வரை கட்டணப் பயணங்களை தொடங்க வேண்டாம். இது demo மட்டுமே.</p></div>
+</main>
+<script>
+const rides=[];
+const $=id=>document.getElementById(id);
+let lang='ta';
+function show(id){['customer','rider','admin'].forEach(x=>$(x).classList.add('hidden'));$(id).classList.remove('hidden');render()}
+function requestRide(){
+ const p=$('pickup').value.trim(),d=$('drop').value.trim();
+ if(!p||!d){alert(lang==='ta'?'இரண்டு இடங்களையும் நிரப்பவும்':'Enter both locations');return}
+ rides.unshift({id:Date.now(),p,d,status:'REQUESTED'});
+ $('customerMsg').textContent=lang==='ta'?'Demo கோரிக்கை உருவாக்கப்பட்டது':'Demo request created';
+ render();
+}
+function accept(id){const r=rides.find(x=>x.id===id);if(r)r.status='ACCEPTED';render()}
+function complete(id){const r=rides.find(x=>x.id===id);if(r)r.status='COMPLETED';render()}
+function render(){
+ $('requests').innerHTML=rides.filter(r=>r.status!=='COMPLETED').map(r=>`<div class="card"><b>${esc(r.p)} → ${esc(r.d)}</b><p>Status: ${r.status}</p>${r.status==='REQUESTED'?`<button onclick="accept(${r.id})">Accept demo ride</button>`:`<button onclick="complete(${r.id})">Complete demo ride</button>`}</div>`).join('')|| (lang==='ta'?'இன்னும் கோரிக்கைகள் இல்லை.':'No requests yet.');
+ $('adminList').innerHTML=rides.map(r=>`<p>${esc(r.p)} → ${esc(r.d)} · ${r.status}</p>`).join('')||'No demo rides';
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('lang').onchange=e=>{
+ lang=e.target.value;
+ const ta=lang==='ta';
+ $('tag').textContent=ta?'உங்கள் பயணம், உங்கள் அருகில்':'Your ride, nearby';
+ $('welcome').textContent=ta?'யார் QuickRide பயன்படுத்துகிறீர்கள்?':'Who is using QuickRide?';
+ $('customerBtn').textContent=ta?'பயணி':'Customer';
+ $('riderBtn').textContent=ta?'ரைடர்':'Rider';
+ $('adminBtn').textContent=ta?'நிர்வாகம் – டெமோ':'Admin – demo';
+ $('bookTitle').textContent=ta?'பயணம் பதிவு':'Book a ride';
+ $('pickupLabel').textContent=ta?'பிக்கப் இடம்':'Pickup location';
+ $('dropLabel').textContent=ta?'செல்ல வேண்டிய இடம்':'Destination';
+ $('requestBtn').textContent=ta?'ரைடு கோரிக்கை':'Request ride';
+ $('riderTitle').textContent=ta?'ரைடர் கோரிக்கைகள்':'Rider requests';
+ $('customerMsg').textContent=ta?'இது மாதிரி செயலி. உண்மையான ரைடு பதிவு செய்யாது.':'Prototype only. No real ride is booked.';
+ $('legalTitle').textContent=ta?'பாதுகாப்பு அறிவிப்பு':'Safety notice';
+ $('legal').textContent=ta?'அரசு/RTO அனுமதி, சரியான வாகன அனுமதி மற்றும் பயணிகள் காப்பீடு உறுதி செய்யப்படும் வரை கட்டணப் பயணங்களை தொடங்க வேண்டாம். இது demo மட்டுமே.':'Do not start paid rides until RTO permissions, vehicle compliance and passenger insurance are confirmed. Demo only.';
+ render();
+};
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script></body></html>
